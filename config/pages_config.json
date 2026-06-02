@@ -1,0 +1,181 @@
+{
+  "_doc": "Coordenadas corregidas y alineadas exactamente con las zonas rojas del formulario E-14 (532x1568px). Se eliminaron las estructuras de tablas de candidatos de las listas preferentes.",
+  "template_image_size": { "width": 532, "height": 1568 },
+  "classes": ["0","1","2","3","4","5","6","7","8","9","dot"],
+  "class_to_idx": {"0":0,"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"dot":10},
+
+  "templates": {
+
+    "nivelacion": {
+      "description": "Página 1 — Nivelación de la mesa (Alineación corregida según page_01.jpg)",
+      "fields": [
+        { "name": "total_votantes_e11",      "bbox": [390, 380, 505, 415], "num_digits": 3 },
+        { "name": "total_votos_senado_urna",  "bbox": [390, 415, 505, 445], "num_digits": 3 },
+        { "name": "total_votos_incinerados",  "bbox": [390, 445, 505, 475], "num_digits": 3 }
+      ]
+    },
+
+    "preferente_full": {
+      "description": "Lista con voto preferente — Solo captura votos por la lista y el total general (page_02.jpg)",
+      "row0": {
+        "name": "votos_solo_lista",
+        "bbox": [390, 472, 505, 511],
+        "num_digits": 3
+      },
+      "total_row": {
+        "name": "total_agrupacion_politica",
+        "bbox": [390, 1485, 505, 1515],
+        "num_digits": 3
+      }
+    },
+
+      "preferente_full2": {
+      "description": "Lista con voto preferente — Solo captura votos por la lista y el total general (page_03.jpg)",
+      "row0": {
+        "name": "votos_solo_lista",
+        "bbox": [390, 472, 505, 511],
+        "num_digits": 3
+      },
+      "total_row": {
+        "name": "total_agrupacion_politica",
+        "bbox": [390, 1145, 505, 1180],
+        "num_digits": 3
+      }
+    },
+
+     "preferente_full3": {
+      "description": "Lista con voto preferente — Solo captura votos por la lista y el total general (page_02.jpg)",
+      "row0": {
+        "name": "votos_solo_lista",
+        "bbox": [390, 472, 505, 511],
+        "num_digits": 3
+      },
+      "total_row": {
+        "name": "total_agrupacion_politica",
+        "bbox": [390, 1445, 495, 1480],
+        "num_digits": 3
+      }
+    },
+
+      "preferente_full4": {
+      "description": "Lista con voto preferente — Solo captura votos por la lista y el total general (page_02.jpg)",
+      "row0": {
+        "name": "votos_solo_lista",
+        "bbox": [390, 472, 505, 511],
+        "num_digits": 3
+      },
+      "total_row": {
+        "name": "total_agrupacion_politica",
+        "bbox": [390, 1425, 495, 1459],
+        "num_digits": 3
+      }
+    },
+
+    "preferente_small": {
+      "description": "Lista con voto preferente indígena — Votos por lista y total (page_20.jpg)",
+      "row0": {
+        "name": "votos_solo_lista",
+        "bbox": [390, 475, 505, 512],
+        "num_digits": 3
+      },
+      "total_row": {
+        "name": "total_agrupacion_politica",
+        "bbox": [390, 720, 505, 762],
+        "num_digits": 3
+      }
+    },
+
+    "preferente_small2": {
+      "description": "Lista con voto preferente indígena de 2 candidatos — Votos por lista y total (page_22.jpg)",
+      "row0": {
+        "name": "votos_solo_lista",
+        "bbox": [390, 475, 505, 512],
+        "num_digits": 3
+      },
+      "total_row": {
+        "name": "total_agrupacion_politica",
+        "bbox": [390, 552, 505, 590],
+        "num_digits": 3
+      }
+    },
+
+    "preferente_small3": {
+      "description": "Lista con voto preferente indígena — Votos por lista y total (page_20.jpg)",
+      "row0": {
+        "name": "votos_solo_lista",
+        "bbox": [390, 475, 505, 512],
+        "num_digits": 3
+      },
+      "total_row": {
+        "name": "total_agrupacion_politica",
+        "bbox": [390, 1005, 502, 1037],
+        "num_digits": 3
+      }
+    },
+
+    "sin_preferente": {
+      "description": "Lista sin voto preferente — Casilla única de votos de la agrupación (Alineación exacta según page_07_2.jpg)",
+      "fields": [
+        { "name": "votos_agrupacion_politica", "bbox": [390, 473, 505, 510], "num_digits": 3 }
+      ]
+    },
+
+    "totales_nacionales": {
+      "description": "Página 18 — Resumen de votos totales de la Circunscripción Nacional (Alineación exacta según page_18.jpg)",
+      "fields": [
+        { "name": "votos_en_blanco",   "bbox": [390, 385, 505, 425], "num_digits": 3 },
+        { "name": "votos_nulos",       "bbox": [390, 425, 505, 455], "num_digits": 3 },
+        { "name": "votos_no_marcados", "bbox": [390, 455, 505, 490], "num_digits": 3 }
+      ]
+    },
+
+    "skip": {
+      "description": "Página de control, firmas o sin datos numéricos requeridos",
+      "fields": []
+    }
+
+  },
+
+  "pages": [
+    { "page":  1, "section": "Nivelacion de la mesa",                         "template": "nivelacion" },
+    { "page":  2, "section": "Circunscripcion Nacional",                       "template": "preferente_full",     "list_name": "Partido de la Union por la Gente - U",  "list_id": 8    },
+    { "page":  3, "section": "Circunscripcion Nacional",                       "template": "preferente_full2",     "list_name": "Coalicion Fuerza Ciudadana",             "list_id": 3143 },
+    { "page":  4, "section": "Circunscripcion Nacional",                       "template": "sin_preferente",      "list_name": "Partido Centro Democratico",             "list_id": 11   },
+    { "page":  5, "section": "Circunscripcion Nacional",                       "template": "sin_preferente",      "list_name": "Pacto Historico Senado",                 "list_id": 3063 },
+    { "page":  6, "section": "Circunscripcion Nacional",                       "template": "preferente_full3",     "list_name": "Partido Conservador Colombiano",         "list_id": 2    },
+    { "page":  7, "section": "Circunscripcion Nacional",                       "template": "sin_preferente",      "list_name": "Partido Politico Oxigeno",               "list_id": 21   },
+    { "page":  8, "section": "Circunscripcion Nacional",                       "template": "sin_preferente",      "list_name": "Patriotas",                              "list_id": 1008 },
+    { "page":  9, "section": "Circunscripcion Nacional",                       "template": "sin_preferente",      "list_name": "La Lista de Oviedo - Con Toda Colombia", "list_id": 1079 },
+    { "page": 10, "section": "Circunscripcion Nacional",                       "template": "preferente_full3",     "list_name": "Coalicion Cambio Radical - ALMA",        "list_id": 3003 },
+    { "page": 11, "section": "Circunscripcion Nacional",                       "template": "preferente_full4",     "list_name": "Alianza por Colombia",                   "list_id": 3020 },
+    { "page": 12, "section": "Circunscripcion Nacional",                       "template": "preferente_small",     "list_name": "Creemos",                                "list_id": 1070 },
+    { "page": 13, "section": "Circunscripcion Nacional",                       "template": "preferente_small3",     "list_name": "Movimiento Salvacion Nacional",           "list_id": 20   },
+    { "page": 14, "section": "Circunscripcion Nacional",                       "template": "sin_preferente",      "list_name": "Colombia Segura y Prospera",             "list_id": 1039 },
+    { "page": 15, "section": "Circunscripcion Nacional",                       "template": "preferente_full3",     "list_name": "Ahora Colombia - MIRA",                  "list_id": 3002 },
+    { "page": 16, "section": "Circunscripcion Nacional",                       "template": "preferente_full4",     "list_name": "Frente Amplio Unitario",                 "list_id": 3018 },
+    { "page": 17, "section": "Circunscripcion Nacional",                       "template": "preferente_full",     "list_name": "Partido Liberal Colombiano",             "list_id": 1    },
+    { "page": 18, "section": "Totales Circunscripcion Nacional",               "template": "totales_nacionales" },
+    { "page": 19, "section": "Circ. Especial Comunidades Indigenas",           "template": "sin_preferente",      "list_name": "ANIC",                                   "list_id": 6181 },
+    { "page": 20, "section": "Circ. Especial Comunidades Indigenas",           "template": "preferente_small2",    "list_name": "Movimiento Unidad en Minga por Colombia", "list_id": 6018 },
+    { "page": 21, "section": "Circ. Especial Comunidades Indigenas",           "template": "sin_preferente",      "list_name": "Cabildo Indigena TEVIS",                 "list_id": 6253 },
+    { "page": 22, "section": "Circ. Especial Comunidades Indigenas",           "template": "preferente_small2", "list_name": "Movimiento SI",                       "list_id": 6175 },
+    { "page": 23, "section": "Circ. Especial Comunidades Indigenas",           "template": "preferente_small2",    "list_name": "Asoc. Autoridades Tradicionales Ind.",   "list_id": 6156 },
+    { "page": 24, "section": "Circ. Especial Comunidades Indigenas",           "template": "preferente_small2",    "list_name": "MAIS",                                   "list_id": 12   },
+    { "page": 25, "section": "Circ. Especial Comunidades Indigenas",           "template": "sin_preferente",      "list_name": "Trietnico Gobernativo TRIGO",            "list_id": 6110 },
+    { "page": 26, "section": "Circ. Especial Comunidades Indigenas",           "template": "preferente_small2",    "list_name": "AICO",                                   "list_id": 5    },
+    { "page": 27, "section": "Circ. Especial Comunidades Indigenas",           "template": "sin_preferente",      "list_name": "ACMIZSAM",                               "list_id": 6088 },
+    { "page": 28, "section": "Circ. Especial Comunidades Indigenas",           "template": "sin_preferente",      "list_name": "Asoc. Cabildos Indigenas por Colombia",  "list_id": 6083 },
+    { "page": 29, "section": "Totales Circ. Especial Comunidades Indigenas",   "template": "totales_nacionales" },
+    { "page": 30, "section": "Constancias de los Jurados de Votacion",         "template": "skip" }
+  ],
+
+  "thresholds": {
+    "confidence_min":          0.85,
+    "entropy_max":             1.20,
+    "margin_min":              0.25,
+    "min_component_area":      12,
+    "max_component_area":      900,
+    "min_digit_fill_ratio":    0.03,
+    "max_components_per_slot": 1
+  }
+}

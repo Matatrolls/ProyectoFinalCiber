@@ -1,0 +1,100 @@
+e14_detector/
+│
+├── README.md                        ← Documentación completa de uso
+├── requirements.txt                 ← Dependencias Python (pip install -r)
+│
+├── train.py                         ← [EJECUTABLE] Entrena el CNN con el dataset
+├── infer.py                         ← [EJECUTABLE] Detecta anomalías en PDFs
+├── calibrate.py                     ← [EJECUTABLE] Verifica coordenadas visualmente
+│
+├── config/
+│   └── pages_config.json            ← Coordenadas ROI de las 30 páginas del E-14
+│                                       Plantillas: nivelacion | preferente_full |
+│                                       sin_preferente | totales_nacionales | skip
+│                                       Umbrales: confidence_min, entropy_max, etc.
+│
+├── src/                             ← Módulos del sistema
+│   ├── __init__.py
+│   ├── model.py                     ← Arquitectura CNN (DigitCNN, 11 clases 0-9+dot)
+│   ├── dataset.py                   ← Carga dataset, augmentación, sampler balanceado
+│   ├── pdf_processor.py             ← Extrae páginas de PDF real o ZIP-de-JPEGs
+│   ├── roi_extractor.py             ← Extrae FieldROI usando coords del config
+│   ├── digit_segmenter.py           ← Preprocesa slot → tensor 32×32 + features CV
+│   ├── anomaly_detector.py          ← Clasifica slots, evalúa 5 niveles de anomalía
+│   └── report_generator.py          ← Exporta CSV y XLSX con imágenes embebidas
+│
+├── models/                          ← Modelos entrenados (generados por train.py)
+│   ├── digit_cnn_best.pt            ← Mejor checkpoint (mayor val_acc)
+│   ├── digit_cnn_last.pt            ← Último estado al finalizar entrenamiento
+│   └── train_history.json           ← Métricas por época (loss, acc train/val)
+│
+├── dataset/                         ← [PROVEER] Imágenes de entrenamiento
+│   ├── 0/                           ← PNGs/JPGs del dígito 0
+│   ├── 1/
+│   ├── 2/
+│   ├── 3/
+│   ├── 4/
+│   ├── 5/
+│   ├── 6/
+│   ├── 7/
+│   ├── 8/
+│   ├── 9/
+│   └── dot/                         ← Círculos vacíos / marcadores pre-impresos
+│
+└── output/                          ← Resultados generados por infer.py y calibrate.py
+    ├── reports/
+    │   ├── reporte_YYYYMMDD_HHMMSS.csv     ← Reporte tabular todas las anomalías
+    │   └── reporte_YYYYMMDD_HHMMSS.xlsx    ← Excel con imágenes + hoja de resumen
+    ├── crops/
+    │   └── E14_001_p10_cand_009_s2.png     ← Recorte del slot anómalo
+    └── calibration/
+        └── page_02.png                     ← Visualización de cajas ROI por página
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FLUJO DE EJECUCIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. INSTALAR DEPENDENCIAS
+   pip install -r requirements.txt
+
+2. ENTRENAR EL MODELO
+   python train.py --dataset dataset/ --epochs 40 --device auto
+
+3. (OPCIONAL) VERIFICAR COORDENADAS
+   python calibrate.py --pdf plantilla.pdf --page 2
+
+4. DETECTAR ANOMALÍAS
+   python infer.py --pdfs carpeta_pdfs/ --threshold 0.85
+
+5. REVISAR RESULTADOS
+   output/reports/reporte_*.xlsx
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PÁGINAS DEL FORMULARIO (30 páginas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Pág  1        nivelacion          Nivelación de la mesa (3 campos × 3 dígitos)
+Págs 2-3      preferente_full     Circ. Nacional — lista voto preferente (100 cand.)
+Págs 4-5      sin_preferente      Circ. Nacional — lista sin voto preferente
+Pág  6        preferente_full     Circ. Nacional — lista voto preferente (100 cand.)
+Págs 7-9      sin_preferente      Circ. Nacional — listas sin voto preferente
+Págs 10-13    preferente_full     Alianzas para curules — voto preferente
+Págs 14-17    preferente_full     Alianzas para curules — voto preferente
+Pág  18       totales_nacionales  Totales Circ. Nacional (blanco, nulos, no marcados)
+Págs 19-21    sin_preferente      Circ. Especial Comunidades Indígenas
+Pág  22       preferente_full     Circ. Especial — Movimiento SI
+Págs 23-30    skip                Certificaciones, observaciones, firmas (sin dígitos)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONDICIONES DE ANOMALÍA (por slot de dígito)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  baja_confianza        softmax_max < 0.85
+  entropia_alta         H(softmax) > 1.20
+  margen_insuficiente   top1 − top2 < 0.25
+  multiples_componentes n_componentes_CC > 1
+  caracter_fusionado    bbox_ratio > 0.95
+  fragmento_pequeno     bbox_ratio < 0.08
