@@ -3,8 +3,8 @@ import numpy as np
 import os
 import random
 
-INPUT_DIR = "pre/dots"
-OUTPUT_DIR = "dataset/dot"
+INPUT_DIR = "pre/lines"
+OUTPUT_DIR = "dataset/lines"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
