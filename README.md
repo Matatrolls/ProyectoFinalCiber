@@ -33,3 +33,11 @@ python run.py --dataset dataset/ --pdfs pdfs/
 
 # Para asegurar un pdf como template
 python run.py --dataset dataset/ --pdfs pdfs/ --template Template_E-14.pdf
+
+
+# PDF
+Se proveen 3 pdfs, un template, 1 caso sin fraude y 1 con un fraude**
+
+*El caso de fraude es totalmente falso, se realizo durante el caso solo para probar la eficacia del modelo
+
+*El cambio se realizo en la primera pagina, la seccion de votos incinerados el segundo punto(dot) se le realizo cambios para asimilarse a un seis(6)
