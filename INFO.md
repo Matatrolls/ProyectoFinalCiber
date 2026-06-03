@@ -65,7 +65,7 @@ Se recomienda mínimo **200 imágenes por clase**.
 ## Flujo completo
 
 ```
-dataset/ ──► train.py ──► models/digit_cnn_best.pt
+dataset/ ──► train.py ──► models/isolation_forest.joblib
                                     │
 pdfs/    ──────────────► infer.py ──┘──► output/reports/*.csv
                                          output/reports/*.xlsx
@@ -94,9 +94,8 @@ Parámetros disponibles:
 | `--out` | `models/` | Carpeta de salida del modelo |
 
 El script guarda:
-- `models/digit_cnn_best.pt` — mejor checkpoint por val_acc
-- `models/digit_cnn_last.pt` — último estado del modelo
-- `models/train_history.json` — historial de métricas por época
+- `models/isolation_forest.joblib` — modelo Isolation Forest + Random Forest Classifier entrenado
+- `models/train_history.json` — historial de métricas
 
 ---
 
@@ -145,13 +144,13 @@ Parámetros:
 | Parámetro | Default | Descripción |
 |---|---|---|
 | `--pdfs` | — | Archivo `.pdf` o directorio |
-| `--model` | `models/digit_cnn_best.pt` | Ruta al modelo entrenado |
+| `--model` | `models/isolation_forest.joblib` | Ruta al modelo entrenado |
 | `--config` | `config/pages_config.json` | Configuración de coordenadas |
-| `--threshold` | `0.85` | Confianza mínima (debajo = anomalía) |
+| `--threshold` | `0.0` | Umbral de score de Isolation Forest (menor = anomalía) |
 | `--entropy` | `1.20` | Entropía máxima permitida |
 | `--margin` | `0.25` | Margen mínimo top1−top2 |
-| `--batch` | `512` | Slots procesados por lote GPU |
-| `--device` | `auto` | `cpu`, `cuda`, `auto` |
+| `--batch` | `512` | Slots procesados por lote |
+| `--device` | `auto` | Ignorado (mantenido por compatibilidad) |
 | `--out` | `output/` | Directorio de salida |
 | `--only_anomalies` | — | Solo reportar anomalías en CSV/XLSX |
 
@@ -201,9 +200,9 @@ El sistema aplica **5 niveles de verificación** por cada slot de dígito:
 
 | Nivel | Condición | Umbral configurable |
 |---|---|---|
-| Confianza baja | `softmax_max < threshold` | `--threshold` |
-| Entropía alta | `H(softmax) > max_entropy` | `--entropy` |
-| Margen insuficiente | `top1 − top2 < margin` | `--margin` |
+| Anotación Isolation Forest | `iforest_score < threshold` | `--threshold` (default `0.0`) |
+| Entropía alta (suplementario) | `H(softmax) > max_entropy` | `--entropy` |
+| Margen insuficiente (suplementario) | `top1 − top2 < margin` | `--margin` |
 | Componentes múltiples | más de 1 componente conectado en el slot | `pages_config.json` |
 | Tamaño anormal | bbox del componente muy grande o muy pequeño | `pages_config.json` |
 
@@ -256,10 +255,9 @@ El sistema detecta automáticamente el formato por la firma de bytes del archivo
 
 ## Notas técnicas
 
-- **CNN**: 3 bloques Conv+BN+ReLU con MaxPool, 2 capas FC. Entrada 32×32 escala de grises.
+- **Modelos de Aprendizaje**: Isolation Forest para detección de anomalías y Random Forest Classifier para clasificación de dígitos. Entrada 32×32 escala de grises aplanada (1024 características).
 - **Augmentation**: rotación ±12°, perspectiva, blur gaussiano, ruido aleatorio, muestreo balanceado por clase.
-- **Inferencia en lote**: todos los slots de un PDF se clasifican en un solo forward pass por batch.
-- **GPU**: si hay CUDA disponible, `--device auto` lo usa automáticamente.
+- **Inferencia en lote**: todos los slots de un PDF se clasifican eficientemente en lote usando Scikit-Learn.
 - **Escalado de coordenadas**: todas las coordenadas en `pages_config.json` se reescalan proporcionalmente al tamaño real de la imagen procesada.
 
 ---
@@ -321,15 +319,15 @@ bash go.sh --pdfs pdfs/ --skip_install
 | `--pdfs` | — | **Requerido.** Archivo `.pdf` o directorio |
 | `--dataset` | — | Dataset para entrenar. Omitir si el modelo ya existe |
 | `--template` | — | PDF plantilla para calibración visual (opcional) |
-| `--model` | `models/digit_cnn_best.pt` | Ruta del modelo |
+| `--model` | `models/isolation_forest.joblib` | Ruta del modelo |
 | `--retrain` | — | Fuerza re-entrenamiento aunque exista el modelo |
-| `--epochs` | `40` | Épocas de entrenamiento |
-| `--batch` | `64` | Batch de entrenamiento |
-| `--threshold` | `0.85` | Confianza mínima para anomalía |
+| `--epochs` | `40` | Ignorado (mantenido por compatibilidad) |
+| `--batch` | `64` | Ignorado (mantenido por compatibilidad) |
+| `--threshold` | `0.0` | Umbral de score de Isolation Forest para anomalía |
 | `--entropy` | `1.20` | Entropía máxima permitida |
 | `--margin` | `0.25` | Margen mínimo top1−top2 |
 | `--only_anomalies` | — | Solo incluir anomalías en el reporte |
-| `--device` | `auto` | `cpu`, `cuda`, `auto` |
+| `--device` | `auto` | Ignorado |
 | `--skip_install` | — | Omite `pip install` (ejecuciones posteriores) |
 
 ---

@@ -14,7 +14,7 @@ IMG_SIZE = 32
 
 @dataclass
 class SlotFeatures:
-    tensor:           torch.Tensor        # [1, 32, 32] para el CNN
+    tensor:           torch.Tensor        # [1, 32, 32] imagen normalizada (entrada al modelo)
     is_blank:         bool                # campo practicamente vacio
     num_components:   int                 # n componentes conectados significativos
     fill_ratio:       float               # fraccion de pixeles de tinta

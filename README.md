@@ -28,6 +28,15 @@ https://divulgacione14congreso.registraduria.gov.co/departamento/31
 Se tomo de manera manual 120 capturas de puntos con la herramienta de Windows Sniping tool
 
 
+## Modelos de aprendizaje
+Se utilizan dos modelos de Scikit-Learn entrenados sobre los vectores de pixeles aplanados (1024 caracteristicas por imagen 32x32):
+
+- **Isolation Forest**: detecta slots de digitos atipicos (anomalias) comparando su perfil de pixeles contra el conjunto de entrenamiento. Un score negativo indica anomalia.
+- **Random Forest Classifier**: clasifica cada slot en una de las 11 clases (0-9, dot) y produce probabilidades por clase para el reporte.
+
+El modelo entrenado se guarda en `models/isolation_forest.joblib`.
+
+
 ## Para ejecutar rapido
 python run.py --dataset dataset/ --pdfs pdfs/
 

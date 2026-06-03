@@ -3,7 +3,7 @@ e14_detector/
 ├── README.md                        ← Documentación completa de uso
 ├── requirements.txt                 ← Dependencias Python (pip install -r)
 │
-├── train.py                         ← [EJECUTABLE] Entrena el CNN con el dataset
+├── train.py                         ← [EJECUTABLE] Entrena Isolation Forest + Random Forest con el dataset
 ├── infer.py                         ← [EJECUTABLE] Detecta anomalías en PDFs
 ├── calibrate.py                     ← [EJECUTABLE] Verifica coordenadas visualmente
 │
@@ -15,18 +15,17 @@ e14_detector/
 │
 ├── src/                             ← Módulos del sistema
 │   ├── __init__.py
-│   ├── model.py                     ← Arquitectura CNN (DigitCNN, 11 clases 0-9+dot)
+│   ├── model.py                     ← Modelo: IsolationForestAnomalyDetector + save/load joblib
 │   ├── dataset.py                   ← Carga dataset, augmentación, sampler balanceado
 │   ├── pdf_processor.py             ← Extrae páginas de PDF real o ZIP-de-JPEGs
 │   ├── roi_extractor.py             ← Extrae FieldROI usando coords del config
 │   ├── digit_segmenter.py           ← Preprocesa slot → tensor 32×32 + features CV
-│   ├── anomaly_detector.py          ← Clasifica slots, evalúa 5 niveles de anomalía
+│   ├── anomaly_detector.py          ← Clasifica slots, evalúa niveles de anomalía con IF
 │   └── report_generator.py          ← Exporta CSV y XLSX con imágenes embebidas
 │
 ├── models/                          ← Modelos entrenados (generados por train.py)
-│   ├── digit_cnn_best.pt            ← Mejor checkpoint (mayor val_acc)
-│   ├── digit_cnn_last.pt            ← Último estado al finalizar entrenamiento
-│   └── train_history.json           ← Métricas por época (loss, acc train/val)
+│   ├── isolation_forest.joblib      ← Isolation Forest + Random Forest Classifier entrenado
+│   └── train_history.json           ← Métricas de validación (accuracy del clasificador)
 │
 ├── dataset/                         ← [PROVEER] Imágenes de entrenamiento
 │   ├── 0/                           ← PNGs/JPGs del dígito 0
@@ -59,13 +58,13 @@ FLUJO DE EJECUCIÓN
    pip install -r requirements.txt
 
 2. ENTRENAR EL MODELO
-   python train.py --dataset dataset/ --epochs 40 --device auto
+   python train.py --dataset dataset/ --out models/
 
 3. (OPCIONAL) VERIFICAR COORDENADAS
    python calibrate.py --pdf plantilla.pdf --page 2
 
 4. DETECTAR ANOMALÍAS
-   python infer.py --pdfs carpeta_pdfs/ --threshold 0.85
+   python infer.py --pdfs carpeta_pdfs/ --threshold 0.0
 
 5. REVISAR RESULTADOS
    output/reports/reporte_*.xlsx
@@ -92,9 +91,7 @@ Págs 23-30    skip                Certificaciones, observaciones, firmas (sin d
 CONDICIONES DE ANOMALÍA (por slot de dígito)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  baja_confianza        softmax_max < 0.85
-  entropia_alta         H(softmax) > 1.20
-  margen_insuficiente   top1 − top2 < 0.25
-  multiples_componentes n_componentes_CC > 1
-  caracter_fusionado    bbox_ratio > 0.95
-  fragmento_pequeno     bbox_ratio < 0.08
+  isolation_forest_anomaly   iforest_score < 0.0  (umbral configurable con --threshold)
+  multiples_componentes      n_componentes_CC > 1
+  caracter_fusionado         bbox_ratio > 0.95
+  fragmento_pequeno          bbox_ratio < 0.08

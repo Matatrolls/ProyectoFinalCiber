@@ -4,7 +4,7 @@ Pipeline de inferencia para deteccion de anomalias en formularios E-14.
 Uso:
     python infer.py --pdfs pdfs/           # directorio con PDFs
     python infer.py --pdfs E14_001.pdf     # un solo archivo
-    python infer.py --pdfs pdfs/ --model models/digit_cnn_best.pt --threshold 0.90
+    python infer.py --pdfs pdfs/ --model models/isolation_forest.joblib --threshold 0.0
 """
 
 import argparse
@@ -20,10 +20,10 @@ import torch
 def parse_args():
     p = argparse.ArgumentParser(description="Inferencia anomalias E-14")
     p.add_argument("--pdfs",      required=True,                   help="Archivo o directorio de PDFs")
-    p.add_argument("--model",     default="models/digit_cnn_best.pt")
+    p.add_argument("--model",     default="models/isolation_forest.joblib")
     p.add_argument("--config",    default="config/pages_config.json")
     p.add_argument("--out",       default="output/")
-    p.add_argument("--threshold", type=float, default=0.85,        help="Confianza minima (0-1)")
+    p.add_argument("--threshold", type=float, default=0.0,         help="Umbral de puntuacion de Isolation Forest (menor = anomalia)")
     p.add_argument("--entropy",   type=float, default=1.20,        help="Entropia maxima")
     p.add_argument("--margin",    type=float, default=0.25,        help="Margen minimo top1-top2")
     p.add_argument("--device",    default="auto")
@@ -139,8 +139,8 @@ def main():
     if all_records:
         csv_p, xlsx_p = export_all(all_records, reports_dir)
         print(f"\nReportes generados:")
-        print(f"  CSV  → {csv_p}")
-        print(f"  XLSX → {xlsx_p}")
+        print(f"  CSV  -> {csv_p}")
+        print(f"  XLSX -> {xlsx_p}")
     else:
         print("\nSin registros para reportar.")
 

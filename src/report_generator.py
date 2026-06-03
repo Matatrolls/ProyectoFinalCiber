@@ -123,7 +123,7 @@ def export_csv(records: list[AnomalyRecord], out_path: str):
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
-    print(f"[CSV] {len(rows)} registros → {out_path}")
+    print(f"[CSV] {len(rows)} registros -> {out_path}")
 
 
 def export_xlsx(records: list[AnomalyRecord], out_path: str):
@@ -215,7 +215,7 @@ def export_xlsx(records: list[AnomalyRecord], out_path: str):
         summary_ws.append([pdf, cnt])
 
     wb.save(out_path)
-    print(f"[XLSX] {len(rows)} registros → {out_path}")
+    print(f"[XLSX] {len(rows)} registros -> {out_path}")
 
 
 def export_all(records: list[AnomalyRecord],

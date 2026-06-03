@@ -67,6 +67,11 @@ def load_real_pdf(path: str, dpi: int = 200) -> list[np.ndarray]:
     """
     Convierte PDF real a imagenes usando pdf2image (requiere Poppler).
     """
+    # Agregar ruta de Poppler en Windows si existe localmente
+    poppler_bin = r"C:\Users\Usuario\Downloads\Release-26.02.0-0\poppler-26.02.0\Library\bin"
+    if os.path.exists(poppler_bin) and poppler_bin not in os.environ["PATH"]:
+        os.environ["PATH"] = poppler_bin + os.pathsep + os.environ["PATH"]
+
     try:
         from pdf2image import convert_from_path
     except ImportError:

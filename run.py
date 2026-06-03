@@ -10,7 +10,7 @@ Con opciones:
 
 Fases automaticas:
     [1] Instala dependencias de requirements.txt (si faltan)
-    [2] Entrena el CNN  (omitido si ya existe models/digit_cnn_best.pt y no se pasa --retrain)
+    [2] Entrena el Isolation Forest (omitido si ya existe models/isolation_forest.joblib y no se pasa --retrain)
     [3] Calibracion     (opcional, solo si se pasa --template)
     [4] Inferencia sobre los PDFs
     [5] Muestra ruta de los reportes generados
@@ -66,7 +66,7 @@ def check_dataset(dataset_dir: str):
 
 
 def do_train(args):
-    banner("FASE 2 — Entrenamiento del CNN")
+    banner("FASE 2 — Entrenamiento de Isolation Forest")
     model_path = Path(args.model)
     if model_path.exists() and not args.retrain:
         print(f"  Modelo ya existe: {model_path}")
@@ -84,6 +84,7 @@ def do_train(args):
         "--workers", str(args.workers),
         "--device",  args.device,
         "--out",     str(model_path.parent),
+        "--contamination", str(args.contamination),
     ]
     run(cmd)
 
@@ -160,7 +161,7 @@ def parse_args():
                        help="Directorio dataset/ para entrenamiento (opcional si el modelo ya existe)")
     g_req.add_argument("--template",  default=None,
                        help="PDF plantilla para calibracion visual (opcional)")
-    g_req.add_argument("--model",     default="models/digit_cnn_best.pt")
+    g_req.add_argument("--model",     default="models/isolation_forest.joblib")
     g_req.add_argument("--config",    default="config/pages_config.json")
     g_req.add_argument("--out",       default="output/")
 
@@ -170,11 +171,12 @@ def parse_args():
     g_train.add_argument("--lr",      type=float, default=1e-3)
     g_train.add_argument("--val",     type=float, default=0.15)
     g_train.add_argument("--workers", type=int,   default=4)
+    g_train.add_argument("--contamination", default="auto", help="Contaminacion para Isolation Forest")
     g_train.add_argument("--retrain", action="store_true",
                          help="Fuerza re-entrenamiento aunque exista el modelo")
 
     g_infer = p.add_argument_group("Opciones de inferencia")
-    g_infer.add_argument("--threshold",      type=float, default=0.85)
+    g_infer.add_argument("--threshold",      type=float, default=0.0)
     g_infer.add_argument("--entropy",        type=float, default=1.20)
     g_infer.add_argument("--margin",         type=float, default=0.25)
     g_infer.add_argument("--batch_infer",    type=int,   default=512)
@@ -194,9 +196,9 @@ def main():
     t0   = time.time()
 
     print()
-    print("  ██████████████████████████████████████████")
-    print("  ███  E-14 ANOMALY DETECTOR — v1.0       ███")
-    print("  ██████████████████████████████████████████")
+    print("  ==========================================")
+    print("  ===  E-14 ANOMALY DETECTOR — v1.0       ===")
+    print("  ==========================================")
 
     os.makedirs(args.out, exist_ok=True)
     os.makedirs(os.path.join(args.out, "reports"), exist_ok=True)

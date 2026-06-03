@@ -2,24 +2,23 @@
 Detector de anomalias multi-nivel para slots de digitos en formularios E-14.
 
 Niveles de deteccion:
-  1. Confianza baja         (softmax max < umbral)
-  2. Entropia alta          (distribucion demasiado uniforme)
-  3. Margen insuficiente    (diferencia top1 - top2 < umbral)
-  4. Componentes multiples  (mas de 1 componente conectado en el slot)
-  5. Tamano anormal         (digito demasiado pequeno o grande)
-  6. Campo fragmentado      (componente con bbox muy alargado)
+  1. Anomalia Isolation Forest (score de decision < umbral)
+  2. Entropia alta             (distribucion demasiado uniforme)
+  3. Margen insuficiente       (diferencia top1 - top2 < umbral)
+  4. Componentes multiples     (mas de 1 componente conectado en el slot)
+  5. Tamano anormal            (digito demasiado pequeno o grande)
+  6. Campo fragmentado         (componente con bbox muy alargado)
 """
 
 from __future__ import annotations
 import math
 import torch
-import torch.nn.functional as F
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
 
 from .digit_segmenter import SlotFeatures
-from .model import DigitCNN
+from .model import IsolationForestAnomalyDetector
 
 
 CLASSES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot"]
@@ -57,7 +56,7 @@ def _top3(probs: torch.Tensor) -> list[tuple[str, float]]:
 class AnomalyDetector:
 
     def __init__(self,
-                 model: DigitCNN,
+                 model: IsolationForestAnomalyDetector,
                  device: str = "cpu",
                  confidence_min: float   = 0.85,
                  entropy_max: float      = 1.20,
@@ -97,12 +96,10 @@ class AnomalyDetector:
                 fill_ratio       = sf.fill_ratio,
             )
 
-        tensor = sf.tensor.unsqueeze(0).to(self.device)    # [1,1,32,32]
-        self.model.eval()
-        with torch.no_grad():
-            logits = self.model(tensor)
-            probs  = F.softmax(logits, dim=-1).squeeze(0)
+        x_flat = sf.tensor.cpu().numpy().flatten().reshape(1, -1)
+        iforest_pred, score, probs_batch, preds_batch = self.model.predict(x_flat)
 
+        probs = torch.tensor(probs_batch[0])
         conf    = float(probs.max().item())
         pred    = int(probs.argmax().item())
         ent     = _entropy(probs)
@@ -111,12 +108,8 @@ class AnomalyDetector:
 
         reasons: list[str] = []
 
-        if conf < self.conf_min:
-            reasons.append(f"baja_confianza ({conf:.2%})")
-        if ent > self.entropy_max:
-            reasons.append(f"entropia_alta ({ent:.3f})")
-        if margin < self.margin_min:
-            reasons.append(f"margen_insuficiente ({margin:.3f})")
+        if score[0] < self.conf_min:
+            reasons.append(f"isolation_forest_anomaly ({score[0]:.4f})")
         if sf.num_components > self.max_comp:
             reasons.append(f"multiples_componentes ({sf.num_components})")
         if sf.num_components > 0:
@@ -150,32 +143,24 @@ class AnomalyDetector:
                 results[i] = self.classify_slot(sf)
 
         if non_blank_idx:
-            tensors = torch.stack(
-                [slot_features[i].tensor for i in non_blank_idx]
-            ).to(self.device)
-
-            self.model.eval()
-            with torch.no_grad():
-                logits = self.model(tensors)
-                probs_batch = F.softmax(logits, dim=-1)
+            x_batch = np.stack([slot_features[i].tensor.cpu().numpy().flatten() for i in non_blank_idx])
+            
+            iforest_preds, scores, probs_batch, preds_batch = self.model.predict(x_batch)
 
             for batch_pos, orig_i in enumerate(non_blank_idx):
                 sf    = slot_features[orig_i]
-                probs = probs_batch[batch_pos]
+                probs = torch.tensor(probs_batch[batch_pos])
 
                 conf   = float(probs.max().item())
                 pred   = int(probs.argmax().item())
                 ent    = _entropy(probs)
                 sp, _  = probs.sort(descending=True)
                 margin = float((sp[0] - sp[1]).item())
+                score  = scores[batch_pos]
 
                 reasons: list[str] = []
-                if conf < self.conf_min:
-                    reasons.append(f"baja_confianza ({conf:.2%})")
-                if ent > self.entropy_max:
-                    reasons.append(f"entropia_alta ({ent:.3f})")
-                if margin < self.margin_min:
-                    reasons.append(f"margen_insuficiente ({margin:.3f})")
+                if score < self.conf_min:
+                    reasons.append(f"isolation_forest_anomaly ({score:.4f})")
                 if sf.num_components > self.max_comp:
                     reasons.append(f"multiples_componentes ({sf.num_components})")
                 if sf.num_components > 0:
