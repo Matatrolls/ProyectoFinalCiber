@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import Counter
 
 
-CLASSES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot"]
+CLASSES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot", "lines"]
 CLASS_TO_IDX = {c: i for i, c in enumerate(CLASSES)}
 IMG_SIZE = 32
 

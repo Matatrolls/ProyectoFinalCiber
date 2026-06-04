@@ -57,7 +57,7 @@ def check_dataset(dataset_dir: str):
         print("  Crea la carpeta con subcarpetas 0/ 1/ ... 9/ dot/")
         sys.exit(1)
     classes = [d.name for d in p.iterdir() if d.is_dir()]
-    expected = {str(i) for i in range(10)} | {"dot"}
+    expected = {str(i) for i in range(10)} | {"dot", "lines"}
     missing  = expected - set(classes)
     if missing:
         print(f"\n[WARN] Clases faltantes en dataset: {sorted(missing)}")

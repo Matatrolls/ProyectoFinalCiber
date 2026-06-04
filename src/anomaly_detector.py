@@ -21,7 +21,7 @@ from .digit_segmenter import SlotFeatures
 from .model import IsolationForestAnomalyDetector
 
 
-CLASSES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot"]
+CLASSES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot", "lines"]
 
 
 @dataclass
@@ -108,15 +108,16 @@ class AnomalyDetector:
 
         reasons: list[str] = []
 
-        if score[0] < self.conf_min:
-            reasons.append(f"isolation_forest_anomaly ({score[0]:.4f})")
-        if sf.num_components > self.max_comp:
-            reasons.append(f"multiples_componentes ({sf.num_components})")
-        if sf.num_components > 0:
-            if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
-                reasons.append("caracter_fusionado")
-            if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
-                reasons.append("fragmento_pequeno")
+        if CLASSES[pred] != "lines":
+            if score[0] < self.conf_min:
+                reasons.append(f"isolation_forest_anomaly ({score[0]:.4f})")
+            if sf.num_components > self.max_comp:
+                reasons.append(f"multiples_componentes ({sf.num_components})")
+            if sf.num_components > 0:
+                if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
+                    reasons.append("caracter_fusionado")
+                if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
+                    reasons.append("fragmento_pequeno")
 
         return SlotResult(
             predicted_class  = pred,
@@ -159,15 +160,16 @@ class AnomalyDetector:
                 score  = scores[batch_pos]
 
                 reasons: list[str] = []
-                if score < self.conf_min:
-                    reasons.append(f"isolation_forest_anomaly ({score:.4f})")
-                if sf.num_components > self.max_comp:
-                    reasons.append(f"multiples_componentes ({sf.num_components})")
-                if sf.num_components > 0:
-                    if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
-                        reasons.append("caracter_fusionado")
-                    if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
-                        reasons.append("fragmento_pequeno")
+                if CLASSES[pred] != "lines":
+                    if score < self.conf_min:
+                        reasons.append(f"isolation_forest_anomaly ({score:.4f})")
+                    if sf.num_components > self.max_comp:
+                        reasons.append(f"multiples_componentes ({sf.num_components})")
+                    if sf.num_components > 0:
+                        if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
+                            reasons.append("caracter_fusionado")
+                        if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
+                            reasons.append("fragmento_pequeno")
 
                 results[orig_i] = SlotResult(
                     predicted_class = pred,
