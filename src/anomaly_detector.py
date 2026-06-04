@@ -21,7 +21,47 @@ from .digit_segmenter import SlotFeatures
 from .model import IsolationForestAnomalyDetector
 
 
-CLASSES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot"]
+CLASSES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot", "lines"]
+
+DIGIT_LABELS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+
+
+def _is_digit_on_lines(probs: torch.Tensor, top_n: int = 2) -> bool:
+    """Devuelve True si la combinacion top-N incluye un digito Y 'lines'.
+
+    Esto representa un numero manuscrito escrito sobre la linea impresa del
+    formulario E-14, lo cual es completamente normal y NO debe ser anomalia.
+    """
+    vals, idxs = probs.topk(min(top_n, len(CLASSES)))
+    top_labels = {CLASSES[i.item()] for i in idxs}
+    has_digit = bool(top_labels & DIGIT_LABELS)
+    has_lines = "lines" in top_labels
+    return has_digit and has_lines
+
+
+def _lines_prob(probs: torch.Tensor) -> float:
+    """Probabilidad asignada a la clase 'lines'."""
+    lines_idx = CLASSES.index("lines")
+    return float(probs[lines_idx].item())
+
+
+def _dot_on_lines(probs: torch.Tensor, threshold: float = 0.08) -> bool:
+    """Devuelve True si el modelo predice 'dot' pero con 'lines' como 2da clase
+    con probabilidad >= threshold. Representa un campo VACIO sobre linea impresa.
+    """
+    top2_labels = {CLASSES[i.item()] for i in probs.topk(2).indices}
+    return "dot" in top2_labels and "lines" in top2_labels and _lines_prob(probs) >= threshold
+
+
+def _dot_uncertain(probs: torch.Tensor, conf_threshold: float = 0.50) -> bool:
+    """Devuelve True si la prediccion es 'dot' con confianza baja.
+
+    Un campo vacio con ruido visual puede generar un bbox ancho o multiples
+    componentes pequenos. No es fraude, es simplemente ambiguedad de imagen.
+    """
+    pred_label = CLASSES[int(probs.argmax().item())]
+    conf = float(probs.max().item())
+    return pred_label == "dot" and conf < conf_threshold
 
 
 @dataclass
@@ -63,7 +103,7 @@ class AnomalyDetector:
                  margin_min: float       = 0.25,
                  max_components: int     = 1,
                  min_bbox_ratio: float   = 0.08,
-                 max_bbox_ratio: float   = 0.95):
+                 max_bbox_ratio: float   = 0.98):  # 0.98: tolera lineas impresas que cruzan el slot
 
         self.model         = model
         self.device        = device
@@ -108,15 +148,21 @@ class AnomalyDetector:
 
         reasons: list[str] = []
 
-        if score[0] < self.conf_min:
-            reasons.append(f"isolation_forest_anomaly ({score[0]:.4f})")
-        if sf.num_components > self.max_comp:
-            reasons.append(f"multiples_componentes ({sf.num_components})")
-        if sf.num_components > 0:
-            if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
-                reasons.append("caracter_fusionado")
-            if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
-                reasons.append("fragmento_pequeno")
+        # Combinacion digito+linea o campo vacio sobre linea → seguro
+        safe_combo = _is_digit_on_lines(probs) or _dot_on_lines(probs) or _dot_uncertain(probs)
+
+        if not safe_combo and CLASSES[pred] != "lines":
+            if score[0] < self.conf_min:
+                reasons.append(f"isolation_forest_anomaly ({score[0]:.4f})")
+            # Multiples componentes solo si 'lines' tiene prob baja (< 15%)
+            # Un 2do componente probable = linea impresa, no fraude
+            if sf.num_components > self.max_comp and _lines_prob(probs) < 0.15:
+                reasons.append(f"multiples_componentes ({sf.num_components})")
+            if sf.num_components > 0:
+                if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
+                    reasons.append("caracter_fusionado")
+                if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
+                    reasons.append("fragmento_pequeno")
 
         return SlotResult(
             predicted_class  = pred,
@@ -159,15 +205,20 @@ class AnomalyDetector:
                 score  = scores[batch_pos]
 
                 reasons: list[str] = []
-                if score < self.conf_min:
-                    reasons.append(f"isolation_forest_anomaly ({score:.4f})")
-                if sf.num_components > self.max_comp:
-                    reasons.append(f"multiples_componentes ({sf.num_components})")
-                if sf.num_components > 0:
-                    if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
-                        reasons.append("caracter_fusionado")
-                    if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
-                        reasons.append("fragmento_pequeno")
+                # Combinacion digito+linea o campo vacio sobre linea → seguro
+                safe_combo = _is_digit_on_lines(probs) or _dot_on_lines(probs) or _dot_uncertain(probs)
+
+                if not safe_combo and CLASSES[pred] != "lines":
+                    if score < self.conf_min:
+                        reasons.append(f"isolation_forest_anomaly ({score:.4f})")
+                    # Multiples componentes solo si 'lines' tiene prob baja (< 15%)
+                    if sf.num_components > self.max_comp and _lines_prob(probs) < 0.15:
+                        reasons.append(f"multiples_componentes ({sf.num_components})")
+                    if sf.num_components > 0:
+                        if sf.bbox_w_ratio > self.max_bbox or sf.bbox_h_ratio > self.max_bbox:
+                            reasons.append("caracter_fusionado")
+                        if sf.bbox_w_ratio < self.min_bbox and sf.bbox_h_ratio < self.min_bbox:
+                            reasons.append("fragmento_pequeno")
 
                 results[orig_i] = SlotResult(
                     predicted_class = pred,

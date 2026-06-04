@@ -6,6 +6,7 @@ import random
 INPUT_DIR = "pre/lines"
 OUTPUT_DIR = "dataset/lines"
 
+os.makedirs(INPUT_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 GENERATED_PER_IMAGE = 20
